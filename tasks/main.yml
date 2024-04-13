@@ -1,0 +1,99 @@
+---
+- name: "Packages Installation"
+  yum:
+    name: "{{ packages }}"
+    state: present
+
+- name: "Creating config file from Template"
+  template:
+    src: httpd.conf.j2
+    dest: /etc/httpd/conf/httpd.conf
+
+- name: "Creating VirtualHost from Template"
+  template:
+    src: virtualhost.conf.j2
+    dest: /etc/httpd/conf.d/default.conf
+
+- name: "Creating Docroot for {{ httpd_server }}"
+  file:
+    path: "{{ httpd_docroot }}"
+    state: directory
+    owner: "{{ httpd_owner }}"
+    group: "{{ httpd_owner }}"
+
+- name: "Creating phpinfo page"
+  copy:
+    src: test.php
+    dest: "{{ httpd_docroot }}/"
+    owner: "{{ httpd_owner }}"
+    group: "{{ httpd_owner }}"
+
+- name: "Restarting Services - httpd, php"
+  service:
+    name: "{{ item }}"
+    state: restarted
+    enabled: true
+  with_items:
+    - httpd
+    - php-fpm
+
+- name: "mariadb-server Package nstallation"
+  yum:
+    name:
+      - mariadb105-server
+      - python3-pip
+    state: present
+
+- name: "mariadb-server Service Restart"
+  service:
+    name: mariadb
+    state: restarted
+    enabled: true
+
+- name: "mariadb-server - PythonMysql Extension Installation"
+  pip:
+    name: PyMySQL
+    state: present
+
+- name: "mariadb-server - Setting root password"
+  ignore_errors: true
+  community.mysql.mysql_user:
+    login_user: "root"
+    login_password:
+    login_unix_socket: "{{ mysql_socket }}"
+    user: "root"
+    password: "{{ mysql_root_pswd }}"
+
+- name: "mariadb-server - Removing Anonymous users"
+  community.mysql.mysql_user:
+    login_user: "root"
+    login_password: "{{ mysql_root_pswd }}"
+    login_unix_socket: "{{ mysql_socket }}"
+    user: ""
+    state: absent
+
+- name: "mariadb-server - Removing test db"
+  community.mysql.mysql_db:
+    name: "test"
+    login_user: "root"
+    login_password: "{{ mysql_root_pswd }}"
+    login_unix_socket: "{{ mysql_socket }}"
+    state: absent
+
+- name: "mariadb-server - Creating database {{ mysql_wp_db }}"
+  community.mysql.mysql_db:
+    name: "{{ mysql_wp_db }}"
+    login_user: "root"
+    login_password: "{{ mysql_root_pswd }}"
+    login_unix_socket: "{{ mysql_socket }}"
+    state: present
+
+- name: "mariadb-server - Creating user {{ mysql_wp_user }}"
+  community.mysql.mysql_user:
+    user: "{{ mysql_wp_user }}"
+    password: "{{ mysql_wp_paswd }}"
+    priv: "{{ mysql_wp_db }}.*:ALL"
+    login_user: "root"
+    login_password: "{{ mysql_root_pswd }}"
+    login_unix_socket: "{{ mysql_socket }}"
+    state: present

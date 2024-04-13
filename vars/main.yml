@@ -1,0 +1,14 @@
+---
+packages:
+  - httpd
+  - php
+  - php-mysqlnd
+httpd_docroot: /var/www/html/default
+httpd_server: wordpress.mikhaelnoah.online
+httpd_port: 80
+httpd_owner: apache
+mysql_root_pswd: "root123"
+mysql_wp_user: "wpuser"
+mysql_wp_paswd: "wpuser123"
+mysql_wp_db: "wpuserdb"
+mysql_socket: "/var/lib/mysql/mysql.sock"
